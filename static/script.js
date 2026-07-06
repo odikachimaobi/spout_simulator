@@ -83,7 +83,7 @@ symbolSearch.addEventListener("input", function() {
     dropdown.classList.remove("hidden");
 });
 
-function selectAsset(sym) {
+async function selectAsset(sym) {
     symbolInput.value            = sym;
     symbolSearch.value           = sym;
     selectedSymbol.textContent   = sym;
@@ -91,6 +91,11 @@ function selectAsset(sym) {
     selectedLTV.textContent      = "Max LTV " + (ASSETS[sym].ltv * 100) + "%";
     selectedAsset.classList.remove("hidden");
     dropdown.classList.add("hidden");
+
+    const prices = await fetchPrices(sym);
+    currentPrices = prices;
+    chartTitle.textContent = `${sym} — ${currentDays} day price history`;
+    renderChart(sym, prices, null);
 }
 
 document.addEventListener("click", function(e) {
@@ -105,7 +110,7 @@ document.querySelectorAll(".tf-btn").forEach(btn => {
         this.classList.add("active");
         currentDays = parseInt(this.dataset.days);
         if (Object.keys(currentPrices).length > 0) {
-            renderChart(symbolInput.value, currentPrices, currentLiqPrice);
+            renderChart(symbolInput.value, currentPrices, currentLiqPrice || null);
         }
     });
 });
@@ -119,9 +124,14 @@ function calculateHealthFactor(collateral, borrowed, threshold) {
 }
 
 async function fetchPrices(symbol) {
-   const response = await fetch(`/stock/${symbol}`);
-    const data = await response.json();
-    return data;
+    try {
+        const response = await fetch(`/stock/${symbol}`);
+        const data = await response.json();
+        return data;
+    } catch (err) {
+        console.error("Failed to fetch prices:", err);
+        return {};
+    }
 }
 
 async function simulate() {
@@ -141,14 +151,31 @@ async function simulate() {
         return;
     }
 
+    const maxBorrowable = collateral * asset.ltv;
+    if (borrowed > maxBorrowable) {
+        alert(`Maximum borrowable for ${symbol} at ${asset.ltv * 100}% LTV is $${maxBorrowable.toFixed(2)}. Please reduce your borrowed amount.`);
+        return;
+    }
+
     const LIQUIDATION_THRESHOLD = asset.ltv;
 
-    const prices       = await fetchPrices(symbol);
-    const priceValues  = Object.values(prices);
-    const currentPrice = priceValues[priceValues.length - 1];
+    const prices = await fetchPrices(symbol);
+
+    if (Object.keys(prices).length === 0) {
+        alert("Could not fetch price data. Please try again.");
+        return;
+    }
+
+    const sortedDates  = Object.keys(prices).sort();
+    const currentPrice = prices[sortedDates[sortedDates.length - 1]];
+
+    if (!currentPrice || isNaN(currentPrice)) {
+        alert("Invalid price data received. Please try again.");
+        return;
+    }
+
     const numShares    = collateral / currentPrice;
     const liqPrice     = borrowed / (numShares * LIQUIDATION_THRESHOLD);
-
     const ltv          = calculateLTV(borrowed, collateral);
     const healthFactor = calculateHealthFactor(collateral, borrowed, LIQUIDATION_THRESHOLD);
 
@@ -173,9 +200,34 @@ async function simulate() {
 simulateBtn.addEventListener("click", simulate);
 
 function renderChart(symbol, pricesObj, liquidationPrice) {
-    const dates   = Object.keys(pricesObj).sort().slice(-currentDays);
-    const prices  = dates.map(date => pricesObj[date]);
-    const liqLine = dates.map(() => liquidationPrice);
+    if (!pricesObj || Object.keys(pricesObj).length === 0) return;
+
+    const dates  = Object.keys(pricesObj).sort().slice(-currentDays);
+    const prices = dates.map(date => pricesObj[date]);
+    const datasets = [
+        {
+            label: `${symbol} Price`,
+            data: prices,
+            borderColor: "#3B82F6",
+            borderWidth: 2,
+            pointRadius: 0,
+            tension: 0.4,
+            fill: true,
+            backgroundColor: "rgba(59,130,246,0.06)"
+        }
+    ];
+
+    if (liquidationPrice && !isNaN(liquidationPrice)) {
+        datasets.push({
+            label: "Liquidation Price",
+            data: dates.map(() => liquidationPrice),
+            borderColor: "#FF4560",
+            borderWidth: 1.5,
+            borderDash: [6, 4],
+            pointRadius: 0,
+            fill: false
+        });
+    }
 
     chartTitle.textContent = `${symbol} — ${currentDays} day price history`;
 
@@ -187,30 +239,7 @@ function renderChart(symbol, pricesObj, liquidationPrice) {
 
     chartInstance = new Chart(ctx, {
         type: "line",
-        data: {
-            labels: dates,
-            datasets: [
-                {
-                    label: `${symbol} Price`,
-                    data: prices,
-                    borderColor: "#3B82F6",
-                    borderWidth: 2,
-                    pointRadius: 0,
-                    tension: 0.4,
-                    fill: true,
-                    backgroundColor: "rgba(59,130,246,0.06)"
-                },
-                {
-                    label: "Liquidation Price",
-                    data: liqLine,
-                    borderColor: "#FF4560",
-                    borderWidth: 1.5,
-                    borderDash: [6, 4],
-                    pointRadius: 0,
-                    fill: false
-                }
-            ]
-        },
+        data: { labels: dates, datasets },
         options: {
             responsive: true,
             plugins: {
@@ -218,10 +247,7 @@ function renderChart(symbol, pricesObj, liquidationPrice) {
             },
             scales: {
                 x: {
-                    ticks: {
-                        maxTicksLimit: 6,
-                        color: "#4A6FA5"
-                    },
+                    ticks: { maxTicksLimit: 6, color: "#4A6FA5" },
                     grid: { color: "rgba(99,153,255,0.06)" }
                 },
                 y: {
