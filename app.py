@@ -42,5 +42,14 @@ def get_stock_data(symbol):
 
     return jsonify(prices)
 
+port = int(os.environ.get("PORT", 5000))
+
 if __name__ == "__main__":
-  app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)), debug=False)
+    app.run(host="0.0.0.0", port=port, debug=False)
+
+@app.route("/debug")
+def debug():
+    return jsonify({
+        "key_present": bool(API_KEY),
+        "key_preview": API_KEY[:6] + "..." if API_KEY else "None"
+    })
