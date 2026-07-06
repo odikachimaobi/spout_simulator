@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Spout Liquidation Simulator</title>
+  <link rel="stylesheet" href="/static/style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+  <div class="app-wrapper">
+
+    <header class="app-header">
+      <h1>Liquidation Simulator</h1>
+      <span class="tag">Spout Finance</span>
+    </header>
+
+    <div class="sim-layout">
+
+      <!-- LEFT PANEL -->
+      <div class="left-panel">
+
+        <div class="card">
+          <p class="panel-label">Position inputs</p>
+
+          <div class="input-group">
+            <label for="symbolSearch">Search supported assets</label>
+            <input type="text" id="symbolSearch" placeholder="Type symbol e.g. AAPL, TSLA" autocomplete="off" />
+            <div id="dropdown" class="dropdown hidden"></div>
+          </div>
+
+          <div id="selectedAsset" class="selected-asset hidden">
+            <div>
+              <p id="selectedSymbol" class="sel-symbol">—</p>
+              <p id="selectedCategory" class="sel-category">—</p>
+            </div>
+            <span id="selectedLTV" class="sel-ltv">—</span>
+          </div>
+
+          <input type="hidden" id="symbol" />
+
+          <div class="input-group">
+            <label for="collateral">Collateral value (USD)</label>
+            <input type="number" id="collateral" placeholder="e.g. 5000" />
+          </div>
+
+          <div class="input-group">
+            <label for="borrowed">Borrowed amount (USD)</label>
+            <input type="number" id="borrowed" placeholder="e.g. 3000" />
+          </div>
+
+          <button id="simulateBtn">Simulate position →</button>
+        </div>
+
+        <div class="card">
+          <p class="panel-label">Position health</p>
+
+          <div class="stats-grid">
+            <div class="stat-card">
+              <p class="stat-label">LTV</p>
+              <p class="stat-value" id="ltvDisplay">—</p>
+              <p class="stat-sub" id="ltvMax">Max —</p>
+            </div>
+
+            <div class="stat-card">
+              <p class="stat-label">Health factor</p>
+              <p class="stat-value" id="healthDisplay">—</p>
+              <p class="stat-sub">Safe > 1.0</p>
+            </div>
+
+            <div class="stat-card full">
+              <p class="stat-label">Liquidation price</p>
+              <p class="stat-value" id="liqDisplay">—</p>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- RIGHT PANEL -->
+      <div class="right-panel">
+        <div class="chart-card">
+          <div class="chart-header">
+            <p class="chart-title" id="chartTitle">Enter a position to simulate</p>
+            <div class="timeframe-toggle">
+              <button class="tf-btn active" data-days="30">30d</button>
+              <button class="tf-btn" data-days="60">60d</button>
+              <button class="tf-btn" data-days="90">90d</button>
+            </div>
+          </div>
+          <canvas id="priceChart"></canvas>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script src="/static/script.js"></script>
+
+</body>
+</html>
