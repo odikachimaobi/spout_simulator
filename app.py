@@ -44,6 +44,8 @@ def get_stock_data(symbol):
     response = requests.get(url)
     data = response.json()
 
+    return jsonify(data)
+
     time_series = data.get("Time Series (Daily)", {})
 
     prices = {}
