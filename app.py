@@ -17,15 +17,6 @@ def index():
 def static_files(filename):
     return send_from_directory("static", filename)
 
-@app.route("/debug")
-def debug():
-    key = os.getenv("ALPHA_VANTAGE_KEY")
-    return jsonify({
-        "key_present": bool(key),
-        "key_length": len(key) if key else 0,
-        "key_preview": key[:6] + "..." if key else "None"
-    })
-
 @app.route("/stock/<symbol>")
 def get_stock_data(symbol):
     API_KEY = os.getenv("ALPHA_VANTAGE_KEY")
@@ -43,8 +34,6 @@ def get_stock_data(symbol):
 
     response = requests.get(url)
     data = response.json()
-
-    return jsonify(data)
 
     time_series = data.get("Time Series (Daily)", {})
 
