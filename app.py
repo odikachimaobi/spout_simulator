@@ -9,8 +9,6 @@ load_dotenv()
 app = Flask(__name__)
 CORS(app)
 
-API_KEY = os.getenv("ALPHA_VANTAGE_KEY")
-
 @app.route("/")
 def index():
     return send_from_directory("static", "index.html")
@@ -19,8 +17,21 @@ def index():
 def static_files(filename):
     return send_from_directory("static", filename)
 
+@app.route("/debug")
+def debug():
+    key = os.getenv("ALPHA_VANTAGE_KEY")
+    return jsonify({
+        "key_present": bool(key),
+        "key_length": len(key) if key else 0,
+        "key_preview": key[:6] + "..." if key else "None"
+    })
+
 @app.route("/stock/<symbol>")
 def get_stock_data(symbol):
+    API_KEY = os.getenv("ALPHA_VANTAGE_KEY")
+
+    if not API_KEY:
+        return jsonify({"error": "API key not found"}), 500
 
     url = (
         f"https://www.alphavantage.co/query"
@@ -46,13 +57,3 @@ port = int(os.environ.get("PORT", 5000))
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=port, debug=False)
-
-@app.route("/debug")
-def debug():
-    import os
-    key = os.getenv("ALPHA_VANTAGE_KEY")
-    return jsonify({
-        "key_present": bool(key),
-        "key_length": len(key) if key else 0,
-        "key_preview": key[:6] + "..." if key else "None"
-    })
