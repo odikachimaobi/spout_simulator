@@ -49,7 +49,10 @@ if __name__ == "__main__":
 
 @app.route("/debug")
 def debug():
+    import os
+    key = os.getenv("ALPHA_VANTAGE_KEY")
     return jsonify({
-        "key_present": bool(API_KEY),
-        "key_preview": API_KEY[:6] + "..." if API_KEY else "None"
+        "key_present": bool(key),
+        "key_length": len(key) if key else 0,
+        "key_preview": key[:6] + "..." if key else "None"
     })
