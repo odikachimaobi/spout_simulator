@@ -44,7 +44,15 @@ def get_stock_data(symbol):
 
     return jsonify(prices)
 
-port = int(os.environ.get("PORT", 5000))
-
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=port, debug=False)
+@app.route("/raw/<symbol>")
+def raw_data(symbol):
+    API_KEY = os.getenv("ALPHA_VANTAGE_KEY")
+    url = (
+        f"https://www.alphavantage.co/query"
+        f"?function=TIME_SERIES_DAILY"
+        f"&symbol={symbol}"
+        f"&outputsize=compact"
+        f"&apikey={API_KEY}"
+    )
+    response = requests.get(url)
+    return
