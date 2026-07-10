@@ -19,40 +19,32 @@ def static_files(filename):
 
 @app.route("/stock/<symbol>")
 def get_stock_data(symbol):
-    API_KEY = os.getenv("ALPHA_VANTAGE_KEY")
+    API_KEY = os.getenv("TWELVE_DATA_KEY")
 
     if not API_KEY:
         return jsonify({"error": "API key not found"}), 500
 
     url = (
-        f"https://www.alphavantage.co/query"
-        f"?function=TIME_SERIES_DAILY"
-        f"&symbol={symbol}"
-        f"&outputsize=compact"
+        f"https://api.twelvedata.com/time_series"
+        f"?symbol={symbol}"
+        f"&interval=1day"
+        f"&outputsize=90"
         f"&apikey={API_KEY}"
     )
 
     response = requests.get(url)
     data = response.json()
 
-    time_series = data.get("Time Series (Daily)", {})
+    values = data.get("values", [])
 
     prices = {}
 
-    for date, values in time_series.items():
-        prices[date] = float(values["4. close"])
+    for entry in values:
+        prices[entry["datetime"]] = float(entry["close"])
 
     return jsonify(prices)
 
-@app.route("/raw/<symbol>")
-def raw_data(symbol):
-    API_KEY = os.getenv("ALPHA_VANTAGE_KEY")
-    url = (
-        f"https://www.alphavantage.co/query"
-        f"?function=TIME_SERIES_DAILY"
-        f"&symbol={symbol}"
-        f"&outputsize=compact"
-        f"&apikey={API_KEY}"
-    )
-    response = requests.get(url)
-    return
+port = int(os.environ.get("PORT", 5000))
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=port, debug=False)
